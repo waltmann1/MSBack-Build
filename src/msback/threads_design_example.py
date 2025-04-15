@@ -6,11 +6,7 @@ import torch
 import numpy as np
 import mstool
 import sys
-sys.path.append("/home/cwaltmann/PycharmProjects/MSBack/MSBack")
-from MSToolProtein import MSToolProtein
-from MSToolProtein import MSToolProteinComplex
-from MSToolProtein import AAProtein
-import copy as cp
+from msback.MSToolProtein import MSToolProtein
 from Simulation import *
 
 mstp_start = MSToolProtein("protein.pdb")

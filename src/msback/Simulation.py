@@ -1,7 +1,7 @@
 import threading
 import copy as cp
-from MSToolProtein import MSToolProtein
-from Utils import timer
+from msback.MSToolProtein import MSToolProtein
+from msback.Utils import timer
 from openmm.app import *
 from openmm import *
 from openmm.unit import *

@@ -18,7 +18,7 @@ from itertools import islice, count
 import math
 
 #try:
-from egnn_pytorch_se3.egnn_pytorch import EGNN_SE3, EGNN
+from msback.egnn_pytorch_se3.egnn_pytorch import EGNN_SE3, EGNN
 se3_avail = True
     
 # except:

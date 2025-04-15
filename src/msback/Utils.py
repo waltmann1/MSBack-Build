@@ -1,5 +1,5 @@
 import pickle as pkl
-from egnn_utils import *
+from msback.egnn_utils import *
 from time import time
 import numpy as np
 

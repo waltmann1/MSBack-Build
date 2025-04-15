@@ -5,14 +5,14 @@ import yaml
 import mstool
 import time
 import pandas as pd
-import sys
 
-#sys.path.append("../Utils")
-from Utils import *
+
+
+from msback.Utils import *
 
 class MSToolProtein(object):
 
-    def __init__(self, pdbfile, trajectory=None):
+    def __init__(self, pdbfile, weights_path=None):
 
         self.u = mstool.Universe(pdbfile)
 
@@ -28,6 +28,11 @@ class MSToolProtein(object):
         self.atom_map_14 = None
         self.three_to_one_letter_map = None
 
+
+        self.chroma_weights_path = weights_path
+
+        if weights_path is None:
+            self.chroma_weights_path = get_local_weights_path()
 
 
     def get_map(self, mapping_file):
@@ -162,14 +167,10 @@ class MSToolProtein(object):
 
         if self.chroma is None:
             import sys
-            import os
-            sys.path.append("/beagle3/gavoth/cwaltmann/code/chroma")
-            from chroma import api
             import torch
-            api.register_key("900b9938893b4912a03c0e694e046dd0")
             from chroma import Chroma, Protein
             #print("imported Protein")
-            path = "/beagle3/gavoth/cwaltmann/code/chroma_weights/"
+            path = self.chroma_weights_path
             if device is None:
                 device = "cpu"
                 if torch.cuda.is_available() and torch.cuda.device_count() > 0:
@@ -181,14 +182,10 @@ class MSToolProtein(object):
             if device is not None:
                 if self.chroma_device != device:
                     import sys
-                    import os
-                    sys.path.append("/beagle3/gavoth/cwaltmann/code/chroma")
-                    from chroma import api
                     import torch
-                    api.register_key("900b9938893b4912a03c0e694e046dd0")
                     from chroma import Chroma, Protein
                     #print("imported Protein")
-                    path = "/beagle3/gavoth/cwaltmann/code/chroma_weights/"
+                    path = self.chroma_weights_path
                     self.chroma = Chroma(weights_backbone=path + "chroma_backbone_v1.0.pt",
                                          weights_design=path + "chroma_design_v1.0.pt", device=device)
                     self.chroma_device = device
@@ -424,7 +421,6 @@ class MSToolProtein(object):
 
         if self.flowback is None:
             import sys
-            import os
             import torch
             path_to_flowback = './Flow-Back/'
             if path_to_flowback not in sys.path:
@@ -443,7 +439,6 @@ class MSToolProtein(object):
             if device is not None:
                 if self.flowback_device != device:
                     import sys
-                    import os
                     import torch
                     path_to_flowback = './Flow-Back/'
                     if path_to_flowback not in sys.path:
@@ -725,11 +720,15 @@ class MSToolProtein(object):
 class AAProtein(MSToolProtein):
 
 
-    def __init__(self, pdbfile, yaml=None):
+    def __init__(self, pdbfile, yaml=None, weights_path=None):
         super(AAProtein, self).__init__(pdbfile=pdbfile)
         self.map = None
         self.resmap = None
         self.yaml = yaml
+
+        self.chroma_weights_path = weights_path
+        if weights_path is None:
+            self.chroma_weights_path = get_local_weights_path()
 
         if yaml is not None:
             self.map = self.read_cg_yaml(yaml)
@@ -935,7 +934,7 @@ class AAProtein(MSToolProtein):
 
 class AAProteinFromMSToolProtein(AAProtein):
 
-    def __init__(self, mstp, yaml):
+    def __init__(self, mstp, yaml, weights_path=None):
         self.u = cp.deepcopy(mstp.u)
         self.map = None
         self.name = cp.deepcopy(mstp.name)
@@ -947,6 +946,10 @@ class AAProteinFromMSToolProtein(AAProtein):
         self.three_to_one_letter_map = None
         self.resmap = None
         self.yaml = yaml
+
+        self.chroma_weights_path = weights_path
+        if weights_path is None:
+            self.chroma_weights_path = get_local_weights_path()
 
         if yaml is not None:
             self.map = self.read_cg_yaml(yaml)
@@ -1106,3 +1109,6 @@ def get_segid(index, include_numbers=True):
             out = out + str(num)
 
         return  out
+
+def get_local_weights_path():
+    return "/beagle3/gavoth/cwaltmann/code/chroma_weights/"
