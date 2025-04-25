@@ -1,0 +1,656 @@
+site-types:
+  CG1:
+    f-weight: [1.0]
+    index: [251]
+    x-weight: [12.011]
+  CG10:
+    f-weight: [1.0]
+    index: [408]
+    x-weight: [12.011]
+  CG100:
+    f-weight: [1.0]
+    index: [2722]
+    x-weight: [12.011]
+  CG101:
+    f-weight: [1.0]
+    index: [2746]
+    x-weight: [12.011]
+  CG102:
+    f-weight: [1.0]
+    index: [2826]
+    x-weight: [12.011]
+  CG103:
+    f-weight: [1.0]
+    index: [2841]
+    x-weight: [12.011]
+  CG104:
+    f-weight: [1.0]
+    index: [2857]
+    x-weight: [12.011]
+  CG105:
+    f-weight: [1.0]
+    index: [2879]
+    x-weight: [12.011]
+  CG106:
+    f-weight: [1.0]
+    index: [2893]
+    x-weight: [12.011]
+  CG107:
+    f-weight: [1.0]
+    index: [2917]
+    x-weight: [12.011]
+  CG108:
+    f-weight: [1.0]
+    index: [2934]
+    x-weight: [12.011]
+  CG109:
+    f-weight: [1.0]
+    index: [2948]
+    x-weight: [12.011]
+  CG11:
+    f-weight: [1.0]
+    index: [424]
+    x-weight: [12.011]
+  CG110:
+    f-weight: [1.0]
+    index: [2963]
+    x-weight: [12.011]
+  CG111:
+    f-weight: [1.0]
+    index: [2977]
+    x-weight: [12.011]
+  CG112:
+    f-weight: [1.0]
+    index: [2996]
+    x-weight: [12.011]
+  CG113:
+    f-weight: [1.0]
+    index: [3015]
+    x-weight: [12.011]
+  CG114:
+    f-weight: [1.0]
+    index: [3031]
+    x-weight: [12.011]
+  CG115:
+    f-weight: [1.0]
+    index: [3086]
+    x-weight: [12.011]
+  CG116:
+    f-weight: [1.0]
+    index: [3100]
+    x-weight: [12.011]
+  CG117:
+    f-weight: [1.0]
+    index: [3112]
+    x-weight: [12.011]
+  CG118:
+    f-weight: [1.0]
+    index: [3123]
+    x-weight: [12.011]
+  CG119:
+    f-weight: [1.0]
+    index: [3145]
+    x-weight: [12.011]
+  CG12:
+    f-weight: [1.0]
+    index: [440]
+    x-weight: [12.011]
+  CG120:
+    f-weight: [1.0]
+    index: [3159]
+    x-weight: [12.011]
+  CG121:
+    f-weight: [1.0]
+    index: [3178]
+    x-weight: [12.011]
+  CG122:
+    f-weight: [1.0]
+    index: [3197]
+    x-weight: [12.011]
+  CG123:
+    f-weight: [1.0]
+    index: [3219]
+    x-weight: [12.011]
+  CG124:
+    f-weight: [1.0]
+    index: [3300]
+    x-weight: [12.011]
+  CG125:
+    f-weight: [1.0]
+    index: [3319]
+    x-weight: [12.011]
+  CG126:
+    f-weight: [1.0]
+    index: [3334]
+    x-weight: [12.011]
+  CG127:
+    f-weight: [1.0]
+    index: [3349]
+    x-weight: [12.011]
+  CG128:
+    f-weight: [1.0]
+    index: [3366]
+    x-weight: [12.011]
+  CG129:
+    f-weight: [1.0]
+    index: [3383]
+    x-weight: [12.011]
+  CG13:
+    f-weight: [1.0]
+    index: [455]
+    x-weight: [12.011]
+  CG130:
+    f-weight: [1.0]
+    index: [3397]
+    x-weight: [12.011]
+  CG14:
+    f-weight: [1.0]
+    index: [470]
+    x-weight: [12.011]
+  CG15:
+    f-weight: [1.0]
+    index: [562]
+    x-weight: [12.011]
+  CG16:
+    f-weight: [1.0]
+    index: [578]
+    x-weight: [12.011]
+  CG17:
+    f-weight: [1.0]
+    index: [597]
+    x-weight: [12.011]
+  CG18:
+    f-weight: [1.0]
+    index: [611]
+    x-weight: [12.011]
+  CG19:
+    f-weight: [1.0]
+    index: [628]
+    x-weight: [12.011]
+  CG2:
+    f-weight: [1.0]
+    index: [265]
+    x-weight: [12.011]
+  CG20:
+    f-weight: [1.0]
+    index: [648]
+    x-weight: [12.011]
+  CG21:
+    f-weight: [1.0]
+    index: [659]
+    x-weight: [12.011]
+  CG22:
+    f-weight: [1.0]
+    index: [669]
+    x-weight: [12.011]
+  CG23:
+    f-weight: [1.0]
+    index: [745]
+    x-weight: [12.011]
+  CG24:
+    f-weight: [1.0]
+    index: [759]
+    x-weight: [12.011]
+  CG25:
+    f-weight: [1.0]
+    index: [776]
+    x-weight: [12.011]
+  CG26:
+    f-weight: [1.0]
+    index: [788]
+    x-weight: [12.011]
+  CG27:
+    f-weight: [1.0]
+    index: [807]
+    x-weight: [12.011]
+  CG28:
+    f-weight: [1.0]
+    index: [821]
+    x-weight: [12.011]
+  CG29:
+    f-weight: [1.0]
+    index: [835]
+    x-weight: [12.011]
+  CG3:
+    f-weight: [1.0]
+    index: [289]
+    x-weight: [12.011]
+  CG30:
+    f-weight: [1.0]
+    index: [852]
+    x-weight: [12.011]
+  CG31:
+    f-weight: [1.0]
+    index: [871]
+    x-weight: [12.011]
+  CG32:
+    f-weight: [1.0]
+    index: [885]
+    x-weight: [12.011]
+  CG33:
+    f-weight: [1.0]
+    index: [947]
+    x-weight: [12.011]
+  CG34:
+    f-weight: [1.0]
+    index: [964]
+    x-weight: [12.011]
+  CG35:
+    f-weight: [1.0]
+    index: [974]
+    x-weight: [12.011]
+  CG36:
+    f-weight: [1.0]
+    index: [984]
+    x-weight: [12.011]
+  CG37:
+    f-weight: [1.0]
+    index: [1001]
+    x-weight: [12.011]
+  CG38:
+    f-weight: [1.0]
+    index: [1018]
+    x-weight: [12.011]
+  CG39:
+    f-weight: [1.0]
+    index: [1035]
+    x-weight: [12.011]
+  CG4:
+    f-weight: [1.0]
+    index: [303]
+    x-weight: [12.011]
+  CG40:
+    f-weight: [1.0]
+    index: [1054]
+    x-weight: [12.011]
+  CG41:
+    f-weight: [1.0]
+    index: [1076]
+    x-weight: [12.011]
+  CG42:
+    f-weight: [1.0]
+    index: [1091]
+    x-weight: [12.011]
+  CG43:
+    f-weight: [1.0]
+    index: [1105]
+    x-weight: [12.011]
+  CG44:
+    f-weight: [1.0]
+    index: [1124]
+    x-weight: [12.011]
+  CG45:
+    f-weight: [1.0]
+    index: [1138]
+    x-weight: [12.011]
+  CG46:
+    f-weight: [1.0]
+    index: [1153]
+    x-weight: [12.011]
+  CG47:
+    f-weight: [1.0]
+    index: [1168]
+    x-weight: [12.011]
+  CG48:
+    f-weight: [1.0]
+    index: [1178]
+    x-weight: [12.011]
+  CG49:
+    f-weight: [1.0]
+    index: [1188]
+    x-weight: [12.011]
+  CG5:
+    f-weight: [1.0]
+    index: [322]
+    x-weight: [12.011]
+  CG50:
+    f-weight: [1.0]
+    index: [1203]
+    x-weight: [12.011]
+  CG51:
+    f-weight: [1.0]
+    index: [1227]
+    x-weight: [12.011]
+  CG52:
+    f-weight: [1.0]
+    index: [1239]
+    x-weight: [12.011]
+  CG53:
+    f-weight: [1.0]
+    index: [1263]
+    x-weight: [12.011]
+  CG54:
+    f-weight: [1.0]
+    index: [1540]
+    x-weight: [12.011]
+  CG55:
+    f-weight: [1.0]
+    index: [1547]
+    x-weight: [12.011]
+  CG56:
+    f-weight: [1.0]
+    index: [1558]
+    x-weight: [12.011]
+  CG57:
+    f-weight: [1.0]
+    index: [1570]
+    x-weight: [12.011]
+  CG58:
+    f-weight: [1.0]
+    index: [1659]
+    x-weight: [12.011]
+  CG59:
+    f-weight: [1.0]
+    index: [1678]
+    x-weight: [12.011]
+  CG6:
+    f-weight: [1.0]
+    index: [336]
+    x-weight: [12.011]
+  CG60:
+    f-weight: [1.0]
+    index: [1695]
+    x-weight: [12.011]
+  CG61:
+    f-weight: [1.0]
+    index: [1710]
+    x-weight: [12.011]
+  CG62:
+    f-weight: [1.0]
+    index: [1727]
+    x-weight: [12.011]
+  CG63:
+    f-weight: [1.0]
+    index: [1746]
+    x-weight: [12.011]
+  CG64:
+    f-weight: [1.0]
+    index: [1753]
+    x-weight: [12.011]
+  CG65:
+    f-weight: [1.0]
+    index: [1777]
+    x-weight: [12.011]
+  CG66:
+    f-weight: [1.0]
+    index: [1794]
+    x-weight: [12.011]
+  CG67:
+    f-weight: [1.0]
+    index: [1901]
+    x-weight: [12.011]
+  CG68:
+    f-weight: [1.0]
+    index: [1917]
+    x-weight: [12.011]
+  CG69:
+    f-weight: [1.0]
+    index: [1924]
+    x-weight: [12.011]
+  CG7:
+    f-weight: [1.0]
+    index: [346]
+    x-weight: [12.011]
+  CG70:
+    f-weight: [1.0]
+    index: [1939]
+    x-weight: [12.011]
+  CG71:
+    f-weight: [1.0]
+    index: [1958]
+    x-weight: [12.011]
+  CG72:
+    f-weight: [1.0]
+    index: [1979]
+    x-weight: [12.011]
+  CG73:
+    f-weight: [1.0]
+    index: [2001]
+    x-weight: [12.011]
+  CG74:
+    f-weight: [1.0]
+    index: [2025]
+    x-weight: [12.011]
+  CG75:
+    f-weight: [1.0]
+    index: [2049]
+    x-weight: [12.011]
+  CG76:
+    f-weight: [1.0]
+    index: [2068]
+    x-weight: [12.011]
+  CG77:
+    f-weight: [1.0]
+    index: [2087]
+    x-weight: [12.011]
+  CG78:
+    f-weight: [1.0]
+    index: [2106]
+    x-weight: [12.011]
+  CG79:
+    f-weight: [1.0]
+    index: [2113]
+    x-weight: [12.011]
+  CG8:
+    f-weight: [1.0]
+    index: [370]
+    x-weight: [12.011]
+  CG80:
+    f-weight: [1.0]
+    index: [2132]
+    x-weight: [12.011]
+  CG81:
+    f-weight: [1.0]
+    index: [2146]
+    x-weight: [12.011]
+  CG82:
+    f-weight: [1.0]
+    index: [2168]
+    x-weight: [12.011]
+  CG83:
+    f-weight: [1.0]
+    index: [2187]
+    x-weight: [12.011]
+  CG84:
+    f-weight: [1.0]
+    index: [2203]
+    x-weight: [12.011]
+  CG85:
+    f-weight: [1.0]
+    index: [2227]
+    x-weight: [12.011]
+  CG86:
+    f-weight: [1.0]
+    index: [2244]
+    x-weight: [12.011]
+  CG87:
+    f-weight: [1.0]
+    index: [2265]
+    x-weight: [12.011]
+  CG88:
+    f-weight: [1.0]
+    index: [2497]
+    x-weight: [12.011]
+  CG89:
+    f-weight: [1.0]
+    index: [2517]
+    x-weight: [12.011]
+  CG9:
+    f-weight: [1.0]
+    index: [386]
+    x-weight: [12.011]
+  CG90:
+    f-weight: [1.0]
+    index: [2541]
+    x-weight: [12.011]
+  CG91:
+    f-weight: [1.0]
+    index: [2553]
+    x-weight: [12.011]
+  CG92:
+    f-weight: [1.0]
+    index: [2574]
+    x-weight: [12.011]
+  CG93:
+    f-weight: [1.0]
+    index: [2590]
+    x-weight: [12.011]
+  CG94:
+    f-weight: [1.0]
+    index: [2602]
+    x-weight: [12.011]
+  CG95:
+    f-weight: [1.0]
+    index: [2626]
+    x-weight: [12.011]
+  CG96:
+    f-weight: [1.0]
+    index: [2646]
+    x-weight: [12.011]
+  CG97:
+    f-weight: [1.0]
+    index: [2667]
+    x-weight: [12.011]
+  CG98:
+    f-weight: [1.0]
+    index: [2689]
+    x-weight: [12.011]
+  CG99:
+    f-weight: [1.0]
+    index: [2703]
+    x-weight: [12.011]
+system:
+- anchor: 0
+  offset: 345700
+  repeat: 1
+  sites:
+  - [CG1, 0]
+  - [CG2, 0]
+  - [CG3, 0]
+  - [CG4, 0]
+  - [CG5, 0]
+  - [CG6, 0]
+  - [CG7, 0]
+  - [CG8, 0]
+  - [CG9, 0]
+  - [CG10, 0]
+  - [CG11, 0]
+  - [CG12, 0]
+  - [CG13, 0]
+  - [CG14, 0]
+  - [CG15, 0]
+  - [CG16, 0]
+  - [CG17, 0]
+  - [CG18, 0]
+  - [CG19, 0]
+  - [CG20, 0]
+  - [CG21, 0]
+  - [CG22, 0]
+  - [CG23, 0]
+  - [CG24, 0]
+  - [CG25, 0]
+  - [CG26, 0]
+  - [CG27, 0]
+  - [CG28, 0]
+  - [CG29, 0]
+  - [CG30, 0]
+  - [CG31, 0]
+  - [CG32, 0]
+  - [CG33, 0]
+  - [CG34, 0]
+  - [CG35, 0]
+  - [CG36, 0]
+  - [CG37, 0]
+  - [CG38, 0]
+  - [CG39, 0]
+  - [CG40, 0]
+  - [CG41, 0]
+  - [CG42, 0]
+  - [CG43, 0]
+  - [CG44, 0]
+  - [CG45, 0]
+  - [CG46, 0]
+  - [CG47, 0]
+  - [CG48, 0]
+  - [CG49, 0]
+  - [CG50, 0]
+  - [CG51, 0]
+  - [CG52, 0]
+  - [CG53, 0]
+  - [CG54, 0]
+  - [CG55, 0]
+  - [CG56, 0]
+  - [CG57, 0]
+  - [CG58, 0]
+  - [CG59, 0]
+  - [CG60, 0]
+  - [CG61, 0]
+  - [CG62, 0]
+  - [CG63, 0]
+  - [CG64, 0]
+  - [CG65, 0]
+  - [CG66, 0]
+  - [CG67, 0]
+  - [CG68, 0]
+  - [CG69, 0]
+  - [CG70, 0]
+  - [CG71, 0]
+  - [CG72, 0]
+  - [CG73, 0]
+  - [CG74, 0]
+  - [CG75, 0]
+  - [CG76, 0]
+  - [CG77, 0]
+  - [CG78, 0]
+  - [CG79, 0]
+  - [CG80, 0]
+  - [CG81, 0]
+  - [CG82, 0]
+  - [CG83, 0]
+  - [CG84, 0]
+  - [CG85, 0]
+  - [CG86, 0]
+  - [CG87, 0]
+  - [CG88, 0]
+  - [CG89, 0]
+  - [CG90, 0]
+  - [CG91, 0]
+  - [CG92, 0]
+  - [CG93, 0]
+  - [CG94, 0]
+  - [CG95, 0]
+  - [CG96, 0]
+  - [CG97, 0]
+  - [CG98, 0]
+  - [CG99, 0]
+  - [CG100, 0]
+  - [CG101, 0]
+  - [CG102, 0]
+  - [CG103, 0]
+  - [CG104, 0]
+  - [CG105, 0]
+  - [CG106, 0]
+  - [CG107, 0]
+  - [CG108, 0]
+  - [CG109, 0]
+  - [CG110, 0]
+  - [CG111, 0]
+  - [CG112, 0]
+  - [CG113, 0]
+  - [CG114, 0]
+  - [CG115, 0]
+  - [CG116, 0]
+  - [CG117, 0]
+  - [CG118, 0]
+  - [CG119, 0]
+  - [CG120, 0]
+  - [CG121, 0]
+  - [CG122, 0]
+  - [CG123, 0]
+  - [CG124, 0]
+  - [CG125, 0]
+  - [CG126, 0]
+  - [CG127, 0]
+  - [CG128, 0]
+  - [CG129, 0]
+  - [CG130, 0]

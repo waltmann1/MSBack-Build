@@ -1,4 +1,6 @@
 import math as m
+import os.path
+
 import numpy as np
 import copy as cp
 import yaml
@@ -32,7 +34,7 @@ class MSToolProtein(object):
         self.chroma_weights_path = weights_path
 
         if weights_path is None:
-            self.chroma_weights_path = get_local_weights_path()
+            self.chroma_weights_path = self.get_local_weights_path()
 
 
     def get_map(self, mapping_file):
@@ -697,6 +699,8 @@ class MSToolProtein(object):
 
             for thing in self.resmap[CG_site_index]:
                 i = thing -1
+                #print(i)
+                #print(atom_indices[i])
                 map_output["site-types"]["CG{}".format(CG_site_index + 1)]['index'].append(atom_indices[i])
                 map_output["site-types"]["CG{}".format(CG_site_index + 1)]['x-weight'].append(12.011)
                 map_output["site-types"]["CG{}".format(CG_site_index + 1)]['f-weight'].append(1.0)
@@ -715,6 +719,9 @@ class MSToolProtein(object):
         with open("%s.yaml" % outfile, 'w') as ff:
             yaml.dump(map_output, ff, default_flow_style=None)
 
+    def get_local_weights_path(self):
+        return "/beagle3/gavoth/cwaltmann/code/chroma_weights/"
+
 
 
 class AAProtein(MSToolProtein):
@@ -728,7 +735,7 @@ class AAProtein(MSToolProtein):
 
         self.chroma_weights_path = weights_path
         if weights_path is None:
-            self.chroma_weights_path = get_local_weights_path()
+            self.chroma_weights_path = self.get_local_weights_path()
 
         if yaml is not None:
             self.map = self.read_cg_yaml(yaml)
@@ -824,7 +831,10 @@ class AAProtein(MSToolProtein):
         #print(the_map)
         to_return = cp.deepcopy(self)
         to_return.u.atoms = to_return.u.atoms[:len(the_map)]
-        new_positions = [np.average(positions[bead], axis=0) for bead in the_map]
+        new_positions = np.array([np.average(positions[bead], axis=0) for bead in the_map])
+        #print(the_map)
+        #print(new_positions.shape)
+        #print(to_return.u.atoms[['x', 'y', 'z']].shape)
         to_return.u.atoms[['x', 'y', 'z']] = new_positions
         to_return.u.atoms['name'] = 'BB'
         to_return.u.atoms['resname'] = ["P" + str(i+1) for i in range(len(to_return.u.atoms))]
@@ -949,7 +959,7 @@ class AAProteinFromMSToolProtein(AAProtein):
 
         self.chroma_weights_path = weights_path
         if weights_path is None:
-            self.chroma_weights_path = get_local_weights_path()
+            self.chroma_weights_path = self.get_local_weights_path()
 
         if yaml is not None:
             self.map = self.read_cg_yaml(yaml)
@@ -1019,7 +1029,7 @@ class MSToolProteinComplex(object):
 
         self.write("ref_pos.dms", ligands=True)
         self.write("temp.dms", ligands=False)
-        mstool.Ungroup("temp.dms", "temp_ungrouped.dms", mapping="mapping_siyoung.dat", backbone=False)
+        mstool.Ungroup("temp.dms", "temp_ungrouped.dms", mapping=os.path.dirname(os.path.abspath(__file__)) + "/Data/mapping_siyoung.dat", backbone=False)
         mstool.capTerminiResidues("temp_ungrouped.dms", "temp_ungrouped_capped.pdb" )
 
         mstp = MSToolProtein("temp_ungrouped_capped.pdb")
@@ -1035,19 +1045,24 @@ class MSToolProteinComplex(object):
         os.remove("temp_ungrouped.dms")
         os.remove("temp_ungrouped_capped.pdb")
 
-    def run_rnem(self,energy=1e4):
+    def run_rnem(self,energy=1e4, ff_add=None):
 
         self.prep_rnem()
-        now = time.time()
+        #now = time.time()
+        here = os.path.dirname(os.path.abspath(__file__))
+        if ff_add is None:
+            ff_add = here + "/Data/onesite_ff.xml"
+
+        map_loc = here + "/Data/mapping_siyoung.dat"
         rem = mstool.REM("complex_ungrouped_capped.dms", "remed_complex_ungrouped_capped.dms", refposre="ref_pos.dms",
-                         fcx=energy, fcy=energy, fcz=energy, pbc=False, turn_off_EMNVT=True, ff_add="onesite_ff.xml")
-        remed = time.time()
+                         fcx=energy, fcy=energy, fcz=energy, pbc=False, turn_off_EMNVT=True, ff_add=ff_add)
+        #remed = time.time()
         print("done with REM")
-        mstool.CheckStructure("remed_complex_ungrouped_capped.dms", mapping="mapping_siyoung.dat")
-        done = time.time()
-        print("time to rem", remed - now)
-        print("time to check", done - remed)
-        print("total time", done - now)
+        mstool.CheckStructure("remed_complex_ungrouped_capped.dms", mapping=map_loc)
+        #done = time.time()
+        #print("time to rem", remed - now)
+        #print("time to check", done - remed)
+        #print("total time", done - now)
 
         return "remed_complex_ungrouped_capped.dms"
 
@@ -1109,6 +1124,3 @@ def get_segid(index, include_numbers=True):
             out = out + str(num)
 
         return  out
-
-def get_local_weights_path():
-    return "/beagle3/gavoth/cwaltmann/code/chroma_weights/"

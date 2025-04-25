@@ -7,7 +7,7 @@ import numpy as np
 import mstool
 import sys
 from msback.MSToolProtein import MSToolProtein
-from Simulation import *
+from msback.Simulation import *
 
 mstp_start = MSToolProtein("protein.pdb")
 
@@ -35,6 +35,23 @@ def launch_pool_in_batches(pool, n_threads):
             thread.start()
         for thread in subpool:
             thread.join()
+def design_worker(mstp_start, chain_name, model, device, seqs, prefix="./temp2/"):
+        try:
+            prefix = "temp2/"
+            mst = cp.deepcopy(mstp_start)
+            mst.u.atoms = mst.u.atoms[mst.u.atoms.chain == chain_name]
+            mst.write(prefix + "CA_" + chain_name + ".pdb")
+            pname = prefix + "CA_" + chain_name + ".pdb"
+            mstp = MSToolProtein(pname)
+            new = mstp.design_protein_sequence(output_name=prefix + "designed_CA_" + chain_name + ".pdb", chroma=model,
+                                               device=device, p=5)
+            with lock:
+                seqs.append(list(new.get_sequence()))
+        except:
+            sequence = mstp_start.get_sequence()
+            sequence = sequence[:int(len(sequence) / 7)]
+            with lock:
+                seqs.append(list(sequence))
 
 def flow(mstp_start, new_sequence, flowback, device, chain, prefix="./temp2/"):
 
@@ -70,13 +87,6 @@ launch_pool_in_batches(pool, n_threads)
 print(time.time()-begin)
 print("hello again")
 
-
-#protein_names = [prefix + "design_reassembled" + str(chains[i]) + "_capped.pdb" for i in range(n_mer)]
-
-#ols = [mstp_start.three_to_one_letter_map[str(resn)] for resn in seqs]
-
-#pool = [threading.Thread(target=sim_worker, args=(protein_names[i], i%n_threads, i, ols[i] )) for i in range(n_mer)]
-#launch_pool_in_batches(pool, n_threads)
 
 
 #"""
