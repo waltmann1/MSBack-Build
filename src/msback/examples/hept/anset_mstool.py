@@ -33,7 +33,7 @@ hept_complex = MSToolProteinComplex(diffused_proteins)
 hept_complex.write("hept.pdb")
 
 heptamer = MSToolProtein("hept.pdb")
-flowed = hept.flowback_protein()
+flowed = heptamer.flowback_protein()
 flowed_name = "finish_flowed.pdb"
 flowed.write(flowed_name)
 qs = QuickSim(flowed_name)
