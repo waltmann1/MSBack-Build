@@ -720,7 +720,7 @@ class MSToolProtein(object):
             yaml.dump(map_output, ff, default_flow_style=None)
 
     def get_local_weights_path(self):
-        return "/beagle3/gavoth/cwaltmann/code/chroma_weights/"
+        return os.path.dirname(os.path.abspath(__file__)) + "/../../chroma_weights/"
 
 
 
