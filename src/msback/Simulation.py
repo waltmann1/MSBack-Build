@@ -20,7 +20,7 @@ class QuickSim(object):
         modeller.addHydrogens(forcefield)
         #print('Adding solvent...')
         top = modeller.getTopology()
-        top.setUnitCellDimensions((20, 20, 20))
+        top.setUnitCellDimensions((30, 30, 30))
         chains = top.chains()
         print('Minimizing...')
         system = forcefield.createSystem(modeller.topology, nonbondedMethod=PME)

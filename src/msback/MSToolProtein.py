@@ -465,6 +465,12 @@ class MSToolProtein(object):
         b1 = ["H" != name[0] and "OT2" != name[0] for name in self.u.atoms.name]
         self.u.atoms = self.u.atoms[b1]
 
+    def get_chain(self, chain_name):
+
+        new_chain = cp.deepcopy(self)
+        new_chain.u.atoms = new_chain.u.atoms[new_chain.u.atoms["chain"]==chain_name]
+        return new_chain
+
     def reindex_resids(self):
 
         chains = list(set(self.u.atoms.chain.values))
@@ -487,7 +493,7 @@ class MSToolProtein(object):
         mob_ref_atoms = self.u.atoms
         umob = cp.deepcopy(self)
 
-        if mob_ref_atoms[['x', 'y', 'z']].values.shape[0] != uref.atoms[['x', 'y', 'z']].values.shape:
+        if mob_ref_atoms[['x', 'y', 'z']].values.shape[0] != uref.atoms[['x', 'y', 'z']].values.shape[0]:
             raise ValueError(f"the number of atoms in this protein, {mob_ref_atoms[['x', 'y', 'z']].values.shape[0]},"
                          f" do not match the reference protein, {uref.atoms[['x', 'y', 'z']].values.shape[0]}")
 
@@ -842,11 +848,11 @@ class AAProtein(MSToolProtein):
         to_return.u.atoms['chain'] = 'A'
         return to_return
 
-    def get_protein_aligned_with_cg_group(self, ref_protein):
+    def get_protein_aligned_with_cg_group(self, ref_protein, use_resmap=False):
 
         uref = ref_protein.u
 
-        cg_protein  = self.get_cg_protein()
+        cg_protein  = self.get_cg_protein(use_resmap=use_resmap)
 
         mob_ref_atoms = cg_protein.u.atoms
         umob = cp.deepcopy(self)
@@ -901,14 +907,13 @@ class AAProtein(MSToolProtein):
                              f"does not match the number of target coordinates, {len(mapp)}")
 
         protein_name = self.name + ".pdb"
-        if not os.path.exists(protein_name):
-            self.write(protein_name)
+        self.write(protein_name)
 
         protein = Protein(protein_name, device=device)
         print("device", device)
         allowed =2
         weight=10
-        protein = chroma.cg_sample(mapp, target, allowed, weight, protein_init=protein, steps=1000,
+        protein = chroma.cg_sample(mapp, target, allowed, weight, protein_init=protein, steps=2000,
                                    initialize_noise=False, fixed=False, sde_func="reverse_sde", noise_range=[0, 3])
         if output_soft:
             protein.to("soft_" + self.name + ".pdb")
@@ -976,6 +981,73 @@ class MSToolProteinComplex(object):
 
         self.ligs = ligands
 
+
+    def get_aligned_complex_resids(self, to_align_index, ref_protein, list_o_resids, ref_resids=None, CA_only=False):
+        """
+
+        :param ref_protein: the MSToolProtein object to align to
+        :param list_o_resids: the residue IDs of the original protein to align based on
+        :param ref_resids: the residue IDs of ref_protein to align the residues in list_o_resids of the original protein, default is to use the list_o_resids again
+        :parmam CA_only: if True, just use the alpha carbons of the given resids. Deault is False
+        :return: the aligned deepcopy of the original protein
+        """
+
+        uref = cp.deepcopy(ref_protein.u)
+        if ref_resids is None:
+            ref_resids = list_o_resids
+        print(ref_resids)
+        b1 = [resid in ref_resids for resid in list(uref.atoms.resid.values)]
+
+        uref.atoms = uref.atoms[(b1)]
+        b2 = [name != "OT2" for name in uref.atoms.name.values]
+        uref.atoms = uref.atoms[(b2)]
+        if CA_only:
+            b3 = [name == "CA" for name in uref.atoms.name.values]
+            uref.atoms = uref.atoms[(b3)]
+
+        #print(list_o_resids)
+
+        to_align = self.proteins[to_align_index]
+        b1 = [resid in list_o_resids for resid in list(to_align.u.atoms.resid.values)]
+        mob_ref_atoms = to_align.u.atoms[b1]
+        b2 = [name != "OT2" for name in list(mob_ref_atoms.name.values)]
+        mob_ref_atoms = mob_ref_atoms[b2]
+        if CA_only:
+            b3 = [name == "CA" for name in list(mob_ref_atoms.name.values)]
+            mob_ref_atoms = mob_ref_atoms[b3]
+
+        #print(mob_ref_atoms.shape)
+        #print(uref.atoms.shape)
+        #print(mob_ref_atoms.name)
+        #print(uref.atoms.name)
+
+        if mob_ref_atoms[['x', 'y', 'z']].values.shape[0] != uref.atoms[['x', 'y', 'z']].values.shape[0]:
+            raise ValueError(f"the number of atoms in the listed resids,{list_o_resids} , this protein, {mob_ref_atoms[['x', 'y', 'z']].values.shape[0]},"
+                         f" do not match the number of atoms in the listed resids, {ref_resids} ,  reference protein, {uref.atoms[['x', 'y', 'z']].values.shape[0]}")
+
+
+        #new_mobile_xyz, rmsd = mstool._fit_to(mob_ref_atoms[['x', 'y', 'z']].values, uref.atoms[['x', 'y', 'z']].values)
+
+        dr_mob_xyz = np.average(mob_ref_atoms[['x', 'y', 'z']].values, axis=0)
+        dr_ref_xyz = np.average(uref.atoms[['x', 'y', 'z']].values, axis=0)
+        R, rmsd = mstool.rotation_matrix(mob_ref_atoms[['x', 'y', 'z']].values - dr_mob_xyz,
+                                         uref.atoms[['x', 'y', 'z']].values - dr_ref_xyz)
+
+        new_proteins = []
+        for protein in self.proteins:
+            umob = cp.deepcopy(protein)
+            new_mob_xyz = dr_ref_xyz + (R @ (umob.u.atoms[['x', 'y', 'z']].values - dr_mob_xyz).T).T
+            umob.u.atoms[['x', 'y', 'z']] = new_mob_xyz
+            new_proteins.append(umob)
+
+        new_ligands = []
+        for ligand in self.ligs:
+            umob = cp.deepcopy(ligand)
+            new_mob_xyz = dr_ref_xyz + (R @ (umob.u.atoms[['x', 'y', 'z']].values - dr_mob_xyz).T).T
+            umob.u.atoms[['x', 'y', 'z']] = new_mob_xyz
+            new_ligands.append(umob)
+
+        return rmsd, MSToolProteinComplex(new_proteins, ligands=new_ligands)
 
 
     def get_universe(self, ligands=False):
