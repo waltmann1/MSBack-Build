@@ -52,6 +52,7 @@ cover/
 dmypy.json
 .pyre/
 .pytype/
+chroma_weights/*
 
 # OS ignores
 .DS_Store

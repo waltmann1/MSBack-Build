@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "msback"
-description="A Python package description goes here."
+description="Tools for backmapping from coarse resolutions"
 version = "0.0.1"
 readme = "README.md"
 license = { text = "BSD-3" }
-authors = [{ name = "YourName", email = "YourName@email.com" }]
+authors = [{ name = "CurtWaltmann", email = "cwwaltmann@gmail.com" }]
 keywords = ["MyKeyword1", "MyKeyword2"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -39,9 +39,6 @@ docs = [
 ]
 
 [project.urls]
-repository = "https://github.com/Quantum-Accelerators/msback"
-documentation = "https://quantum-accelerators.github.io/msback/"
-changelog = "https://github.com/Quantum-Accelerators/msback/blob/main/CHANGELOG.md"
 
 [tool.setuptools.package-data]
 msback = ["py.typed"]

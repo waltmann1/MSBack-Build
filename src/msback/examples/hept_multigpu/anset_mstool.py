@@ -37,7 +37,7 @@ aas = [AAProtein(AAname, yaml = yaml_name) for AAname in AAnames]
 cg_proteins = [MSToolProtein(CGname) for CGname in CGnames]
 
 n_threads = torch.cuda.device_count()
-chromas = [MSToolProtein("../cg0.pdb").load_chroma(device="cuda:" + str(i)) for i in range(n_threads)]
+chromas = [MSToolProtein("cg0.pdb").load_chroma(device="cuda:" + str(i)) for i in range(n_threads)]
 #chromas = [(None, None) for _ in range(2)]
 memory_stats()
 

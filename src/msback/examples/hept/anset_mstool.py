@@ -11,7 +11,6 @@ AAname = "hept_config_pent2_2.pdb"
 yaml_name = "2m8l_CG.yaml"
 CGnames = ["cg" + str(i)+ ".pdb" for i in range(7)]
 
-
 aa = AAProtein(AAname, yaml = yaml_name)
 cg_proteins = [MSToolProtein(CGname) for CGname in CGnames]
 
