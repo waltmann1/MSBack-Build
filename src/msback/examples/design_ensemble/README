@@ -1,0 +1,9 @@
+run bintest.py to generate the changes to the free energy curve for all single mutations in results/
+
+then run process_results.py to convert those to the predicted changes in binding energy
+
+matrix_bar*.py will let you visualize them all simultaneously
+
+you can also run onestruct.py to get the energies for just one structure
+
+one_matrix_bar*.py will let you visulaize them

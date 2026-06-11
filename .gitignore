@@ -4,6 +4,8 @@ docs/reference/*
 *doctrees*
 /site
 
+src/msback/examples/design_ensemble/combined_BB_100ps_whole.pdb
+
 # Python ignores
 __pycache__/
 *.py[cod]

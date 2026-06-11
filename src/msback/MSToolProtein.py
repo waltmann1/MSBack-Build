@@ -62,18 +62,22 @@ class MSToolProtein(object):
 
         length = self.u.atoms.name.count()
         current = 0
+        current_chain = "wrong"
         past = 0
         lengths = []
         i =0
         num =0
         resids = self.u.atoms.resid
+        chains = self.u.atoms.chain
         #print(resids)
         #print(resids[0])
         while i < length:
             past = current
             current = resids[i]
+            past_chain = current_chain
+            current_chain = chains[i]
             #print(current)
-            if current < past:
+            if current < past or (current==past and current_chain != past_chain):
                 #print(num)
                 lengths.append(num)
                 num = 0
@@ -177,6 +181,7 @@ class MSToolProtein(object):
                 device = "cpu"
                 if torch.cuda.is_available() and torch.cuda.device_count() > 0:
                     device = "cuda"
+            print("device is ", device, "time to load")
             self.chroma = Chroma(weights_backbone=path + "chroma_backbone_v1.0.pt",
                                  weights_design=path + "chroma_design_v1.0.pt", device=device)
             self.chroma_device = device
@@ -236,6 +241,40 @@ class MSToolProtein(object):
         del protein
         torch.cuda.empty_cache()
         return MSToolProtein(output_name)
+
+    def get_chroma_energy(self, chroma=None, device=None, bins=None, location=None, mutations=None):
+        from chroma import Protein
+
+        print("trying to load chroma", chroma, device)
+        if chroma is None or device is None:
+            if self.chroma is None:
+                self.load_chroma(device=device)
+
+            chroma = self.chroma
+            device = self.chroma_device
+
+
+        print("loaded chroma")
+        print(self.name)
+        protein_name =  self.name + ".pdb"
+        if not os.path.exists(protein_name) and location is None:
+            protein_name = "temp.pdb"
+            self.write(protein_name)
+
+        if location is not None:
+            protein_name  =location
+
+        print("loading Protein object in chroma")
+        a = time()
+        protein = Protein(protein_name, device=device)
+        b = time()
+        print(b-a)
+        #print(bins)
+        if bins is None:
+            u = chroma.get_potts_energy(protein=protein)
+        else:
+            u = chroma.get_potts_energy_derivatives_by_bin(protein=protein, cg_bin_indices=bins, mutations=mutations)
+        return u
 
     def get_protein_with_new_sequence(self, new_sequence, flowback=None, device=None):
 
@@ -310,6 +349,7 @@ class MSToolProtein(object):
         resid = things[:, 3]
         self.init_atom_map()
         for ind, resn in enumerate(resname):
+            print(ind, resn)
             c1 = proteinu.atoms.chain==chain[ind]
             c2 = proteinu.atoms.name=="CA"
             c3 = proteinu.atoms.resid==resid[ind]
@@ -433,7 +473,9 @@ class MSToolProtein(object):
                 device = "cpu"
                 if torch.cuda.is_available():
                     device = "cuda"
-            ckp = 14
+            #ckp = 14
+            ckp=7000
+            print(ckp)
             model_path = path_to_flowback + "/models/Pro_pretrained"
             self.flowback = load_model(model_path, ckp, device)
             self.flowback_device = device
@@ -726,7 +768,8 @@ class MSToolProtein(object):
             yaml.dump(map_output, ff, default_flow_style=None)
 
     def get_local_weights_path(self):
-        return os.path.dirname(os.path.abspath(__file__)) + "/../../chroma_weights/"
+        return "/beagle3/gavoth/cwaltmann/code/chroma_weights/"
+        #return os.path.dirname(os.path.abspath(__file__)) + "/../../chroma_weights/"
 
 
 
