@@ -1,3 +1,5 @@
+to get the trajectory used follow this link https://drive.google.com/file/d/1PekiBfUHCiyHV3Z3gif3y77XG5hy4SB7/view?usp=sharing
+
 run bintest.py to generate the changes to the free energy curve for all single mutations in results/
 
 then run process_results.py to convert those to the predicted changes in binding energy
