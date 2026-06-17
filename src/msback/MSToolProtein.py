@@ -281,7 +281,7 @@ class MSToolProtein(object):
         pro = cp.deepcopy(self)
         pro.u.atoms = pro.u.atoms[pro.u.atoms.name=="CA"]
         for chain in np.unique(pro.u.atoms.chain.values):
-            pro.u.atoms.loc[pro.u.atoms.chain==chain, 'resname'] = new_sequence
+            pro.u.atoms.loc[pro.u.atoms.chain==chain, 'resname'] = new_seflowquence
         pro.add_backbone_sidechains()
         flowed = pro.flowback_protein(flowback=flowback, device=device)
         if self.resmap is not None:
@@ -473,8 +473,8 @@ class MSToolProtein(object):
                 device = "cpu"
                 if torch.cuda.is_available():
                     device = "cuda"
-            #ckp = 14
-            ckp=7000
+            ckp = 14
+            #ckp=7000
             print(ckp)
             model_path = path_to_flowback + "/models/Pro_pretrained"
             self.flowback = load_model(model_path, ckp, device)
