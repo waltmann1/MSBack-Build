@@ -16,6 +16,7 @@ from einops import rearrange, repeat
 from einops.layers.torch import Rearrange
 from itertools import islice, count
 import math
+from scipy.spatial import cKDTree
 
 #try:
 from msback.egnn_pytorch_se3.egnn_pytorch import EGNN_SE3, EGNN
@@ -129,6 +130,7 @@ class EGNN_Network_time(nn.Module):
         time_dim=0, 
         res_dim=20,  # change to 21
         atom_dim=3,  # change to 5
+        esm_dim=1280,
         sym='e3',
         **kwargs    # MJ -- include seq_features, and seq_decay in kwargs
     ):
@@ -139,7 +141,8 @@ class EGNN_Network_time(nn.Module):
         
         self.res_emb = nn.Embedding(res_dim, dim)
         self.atom_emb = nn.Embedding(atom_dim, dim)
-        #self.time_emb = nn.Embedding(1, dim)
+        # self.esm_emb = nn.Linear(esm_dim, dim)
+        # self.time_emb = nn.Embedding(1, dim)
 
         self.token_emb = nn.Embedding(num_tokens, dim) if exists(num_tokens) else None
         self.pos_emb = nn.Embedding(num_positions, dim) if exists(num_positions) else None
@@ -204,7 +207,7 @@ class EGNN_Network_time(nn.Module):
 
         if exists(self.token_emb):
             feats = self.token_emb(feats)
-        
+
         if atom_feats != None:
             feats += self.atom_emb(atom_feats)
 
@@ -219,32 +222,32 @@ class EGNN_Network_time(nn.Module):
             n, dim = feats.shape[1], feats.shape[2]
             pos_emb_cos = generate_cos_pos_encoding(n, dim, device=device, scale=self.emb_cos_scale)
             feats += rearrange(pos_emb_cos, 'n d -> () n d')
-            
+
         else:
             pass
             #print('No absolute pos encoding')
-          
+
 
         # if time passed as single float or dim 0 tensor
         if isinstance(time, float) or time.dim()==0:
             time = time*torch.ones((b, a, 1)).to(device)
-            
+
         # if time is passed as a tensor of size b
         elif time.dim() == 1:
             time = time[:, None].repeat(1, a)[:, :, None]
-            
+
         #else:
         #    feats += time[:, None, None]
-        
+
         # use a time embedding MLP
         if self.time_dim > 0:
             time = self.time_net(time)
-            
+
         feats += time
 
         if exists(edges) and exists(self.edge_emb):
             edges = self.edge_emb(edges)
-        
+
         # create N-degrees adjacent matrix from 1st degree connections
         if exists(self.num_adj_degrees):
             assert exists(adj_mat), 'adjacency matrix must be passed in (keyword argument adj_mat)'
@@ -271,7 +274,7 @@ class EGNN_Network_time(nn.Module):
         global_tokens = None
         if exists(self.global_tokens):
             global_tokens = repeat(self.global_tokens, 'n d -> b n d', b = b)
-            
+
         # go through layers
 
         coor_changes = [coors]
@@ -859,6 +862,242 @@ def euler_integrator(model, x, nsteps=100, mask=None, noise=0.0):
         ode_list.append(x.cpu().numpy())
 
     return np.array(ode_list)
+
+
+def euler_ff_integrator(model, x, ca_pos, rtp_data, lj_data, bond_data, top, device, nsteps=100, t_flip=0.55, mask=None, alpha=20):
+    # Try adding small amounts of noise during integration
+    ode_list = []
+    dt = 1.0 / (nsteps - 1)
+
+    chi_list = []
+    chiral_flipped = False
+    
+    device = x.device
+    res_maps = build_residue_maps(top)
+    for t in np.linspace(0, 1, nsteps):
+      
+        
+
+        with torch.no_grad():
+            dx_dt = model(t, x.detach())
+        # Compute Lennard-Jones force contribution
+        
+        if t < 0.85:
+            ff_velocity = torch.zeros_like(x).to(device)
+            
+        else:
+            if t < 0.95:
+                ff_velocity = 0.1 * t**alpha * torch.stack([torch.clamp(lj_velocity_fn(x[i:i+1] + ca_pos, t, rtp_data, lj_data, dt, top, device), -5, 5) 
+                                                        for i in range(x.shape[0])])
+
+                        
+            else:
+                ff_velocity = t**alpha * torch.stack([
+                    0.1 * torch.clamp(lj_velocity_fn(x[i:i+1] + ca_pos, t, rtp_data, lj_data, dt, top, device), -5, 5) +
+                    torch.clamp(bond_velocity_fn(x[i:i+1] + ca_pos, t, rtp_data, bond_data, dt, top, device), -1, 1)
+                    for i in range(x.shape[0])
+                ])
+
+        if t >= t_flip:
+        # if t >= t_flip and t < t_flip + 0.25:
+            # abs_pos = x + ca_pos                        # (B, N, 3)
+            chi_vel = torch.stack([chirality_fix_tensor(x[i] + ca_pos[0], res_maps, t,
+                                           k_side_init=0.4, k_oxy_init=-0.2) for i in range(x.shape[0])])
+            ff_velocity = ff_velocity + chi_vel         # same units: nm/ps
+
+            
+      
+              
+        x = (x + (dx_dt + ff_velocity) * dt).detach()
+        
+        
+        # Track each update to show diffusion path
+        ode_list.append(x.cpu().numpy())
+        
+        
+    return np.array(ode_list)
+
+def build_residue_maps(top):
+    """
+    Pre-compute atom indices for every residue that has the five atoms we need.
+    Returns a list of dicts (one per residue).
+    """
+    res_maps = []
+    for res in top.residues:
+        try:
+            res_maps.append(
+                dict(
+                    n   = res.atom('N' ).index,
+                    ca  = res.atom('CA').index,
+                    c   = res.atom('C' ).index,
+                    cb  = res.atom('CB').index,
+                    o   = res.atom('O' ).index,
+                    side=[a.index for a in res.atoms
+                          if a.name not in ('N', 'CA', 'C', 'O')]
+                )
+            )
+        except KeyError:      # glycine, missing O, etc.
+            continue
+    return res_maps
+
+
+def chirality_fix_tensor(pos, res_maps, t,
+                         k_side_init=0.02, k_oxy_init=-0.01,
+                         eps_target=2e-4, k_max=1.6):
+    """
+    Flip or encourage chirality for a single structure (batch = 1).
+
+    Parameters
+    ----------
+    pos   : (1, N, 3) *or* (N, 3) absolute coordinates  [nm]
+    res_maps : list from build_residue_maps(top)
+    t     : current diffusion time in [0, 1]
+    eps_target : signed volume we insist on after the flip branch
+    k_max : hard cap on any per-residue velocity            [nm ps⁻¹]
+
+    Returns
+    -------
+    dv    : (N, 3) velocity increments                     [nm ps⁻¹]
+    """
+    # ---- normalise shapes ---------------------------------------------------
+    if pos.ndim == 3:            # (1, N, 3) → (N, 3)
+        pos = pos[0]
+    N = pos.size(0)
+    dv = torch.zeros_like(pos)   # (N, 3)
+
+    # cubic track we want to follow
+    V_cubic   = 0.002 * t**3
+    time_left = max(1.0 - t, 1e-8)     # duration until t = 1
+
+    for rm in res_maps:
+        n, ca, c, cb, o, side = (
+            rm[k] for k in ('n', 'ca', 'c', 'cb', 'o', 'side')
+        )
+        side = torch.as_tensor(side, device=pos.device)
+
+        # backbone vectors (3-D each)
+        v1 = pos[n]  - pos[ca]          # N–CA
+        v2 = pos[c]  - pos[ca]          # C–CA
+        v3 = pos[cb] - pos[ca]          # CA→CB
+
+        n_vec = torch.cross(v1, v2)     # normal to the plane
+        A     = n_vec.norm() + 1e-8
+        n_hat = n_vec / A               # unit normal
+
+        V = torch.dot(n_hat, v3)        # signed volume  (scalar)
+
+        # choose branch -------------------------------------------------------
+        if V < 0:                       # ----- flip branch -----
+            delV       = eps_target - V           # positive amount to add
+            k_needed = torch.clamp(delV / (A * time_left),
+                                   0.0, k_max)
+
+        elif V < V_cubic:               # ----- encourage branch -----
+            delV       = V_cubic - V
+            k_needed = torch.clamp(delV / (A * time_left),
+                                   0.0, k_max)
+
+        else:                           # already on track
+            continue
+
+        # make push ⟂ CA–CB to keep bond length unchanged --------------------
+        u_cb   = v3 / (v3.norm() + 1e-8)
+        proj   = torch.dot(n_hat, u_cb) * u_cb
+        n_perp = (n_hat - proj)
+        n_perp = n_perp / (n_perp.norm() + 1e-8)
+
+        # apply velocities ----------------------------------------------------
+        dv[side] += k_needed * n_perp           # every side-chain atom incl. CB
+        dv[o]    += -0.5 * k_needed * n_perp    # oxygen counter-kick
+
+    return dv         # (N, 3)
+
+def lj_velocity_fn(x, t, rtp_data, lj_data, dt, top, device, CUTOFF=0.42):
+    """Compute Lennard-Jones force given positions, epsilon, and sigma."""
+    residues = [top.atom(i).residue.name for i in range(top.n_atoms)]
+    atoms = [top.atom(i).name for i in range(top.n_atoms)]
+    res_idxs = [top.atom(i).residue.resSeq for i in range(top.n_atoms)]
+    lj_list = [get_atom_lj(rtp_data, lj_data, residues[i], atoms[i]) for i in range(len(atoms))]
+    close_pairs = find_close_pairs(x[0].cpu().numpy(), CUTOFF)
+    velocities = torch.zeros(len(atoms), 3).to(device)
+    for i, j, dist in close_pairs:
+        if res_idxs[i] != res_idxs[j] and not ((res_idxs[i] == res_idxs[j] - 1 or res_idxs[i] == res_idxs[j] + 1) and atoms[i] in ["C", "N", "O", "CA"] and atoms[j] in ["C", "N", "O", "CA"]):
+            mass_i, sigma_i, epsilon_i = lj_list[i]
+            mass_j, sigma_j, epsilon_j = lj_list[j]
+            if np.abs(res_idxs[i] - res_idxs[j]) < 3:
+                sigma = t * (sigma_i + sigma_j) / 2 # Nearby residues are typically growing away from each other, so will be intentionally closer at lower t. t provides correction here.
+            else:
+                sigma = (sigma_i + sigma_j) / 2  # Instead of fetching a precomputed sigma
+            epsilon = (epsilon_i * epsilon_j) ** 0.5  # Instead of a single epsilon lookup
+            
+            inv_r2 = 1.0 / (dist ** 2)
+            inv_r6 = inv_r2 ** 3
+            inv_r12 = inv_r6 ** 2
+            
+            F_LJ = 24 * epsilon * inv_r2 * (2 * (sigma ** 12) * inv_r12 - (sigma ** 6) * inv_r6)
+            force = F_LJ * (x[0, i] - x[0, j])  # Compute force vector
+    
+            velocities[i] += (force / mass_i) * dt
+            velocities[j] -= (force / mass_j) * dt
+     
+    return velocities
+
+
+
+def bond_velocity_fn(x, t, rtp_data, bond_data, dt, top, device):
+    
+    residues = [top.atom(i).residue.name for i in range(top.n_atoms)]
+    atoms = [top.atom(i).name for i in range(top.n_atoms)]
+    res_idxs = [top.atom(i).residue.resSeq for i in range(top.n_atoms)]
+    velocities = torch.zeros(len(atoms), 3).to(device)
+    for bond in top.bonds:
+        if bond[0].element.name != 'sulfur' or bond[1].element.name != 'sulfur':
+            i = bond[0].index
+            j = bond[1].index
+            
+            b0, kb, mass_i, mass_j = get_bond_info(rtp_data, bond_data, bond)
+            r_ij = x[0, i] - x[0, j]
+            bond_length = torch.norm(r_ij).item()
+            F_b = kb * (bond_length - (b0 * t))
+            force = F_b * r_ij
+            velocities[i] -= (force / mass_i) * dt
+            velocities[j] += (force / mass_j) * dt
+
+    return velocities
+def get_atom_lj(rtp_data, lj_data, residue, atom):
+    atom_type = rtp_data[residue][atom]
+    row =  lj_data[lj_data['name'] == atom_type]
+    return row['mass'].values[0], row['sigma'].values[0], row['epsilon'].values[0]
+    
+def get_bond_info(rtp_data, bond_data, bond):
+    i_name = bond[0].name
+    j_name = bond[1].name
+    i_res = bond[0].residue.name
+    j_res = bond[1].residue.name
+    mass_i = bond[0].element.mass
+    mass_j = bond[1].element.mass
+    i_type = rtp_data[i_res][i_name]
+    j_type = rtp_data[j_res][j_name]
+    bond_row = bond_data[(bond_data['i'] == i_type) & (bond_data['j'] == j_type)]
+    if len(bond_row) == 0:
+        bond_row = bond_data[(bond_data['j'] == i_type) & (bond_data['i'] == j_type)]
+    return bond_row['b0'].iloc[0], bond_row['kb'].iloc[0], mass_i, mass_j
+        
+def find_close_pairs(positions, CUTOFF):
+    """
+    Finds pairs of points within CUTOFF distance of each other.
+
+    Parameters:
+        positions (np.ndarray): Array of shape (N, D) containing N points in D-dimensional space.
+        CUTOFF (float): Distance threshold.
+
+    Returns:
+        list of tuple: Pairs of indices (i, j) where distance between points[i] and points[j] < CUTOFF.
+    """
+    tree = cKDTree(positions)
+    pairs = tree.query_pairs(CUTOFF)
+    pair_dists = [(i, j, np.linalg.norm(positions[i] - positions[j])) for i, j in pairs]
+    return pair_dists
 
 def runge_kutta_integrator(model, x, nsteps=50):
     '''Runge Kutta 4th order solver (takes ~4x longer per-step compated to Euler)'''

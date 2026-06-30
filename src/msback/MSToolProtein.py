@@ -1,5 +1,6 @@
 import math as m
 import os.path
+import os
 
 import numpy as np
 import copy as cp
@@ -7,6 +8,7 @@ import yaml
 import mstool
 import time
 import pandas as pd
+import  mdtraj as md
 
 
 
@@ -459,7 +461,7 @@ class MSToolProtein(object):
         new_proteinu_atoms.sort_values(by=['chain', 'resid'], inplace=True)
         self.u.atoms = new_proteinu_atoms
 
-    def load_flowback(self, device=None):
+    def load_flowback(self, device=None, ckp=14, adjoint=False):
 
         if self.flowback is None:
             import sys
@@ -473,11 +475,17 @@ class MSToolProtein(object):
                 device = "cpu"
                 if torch.cuda.is_available():
                     device = "cuda"
-            ckp = 14
+            #ckp = 14
             #ckp=7000
             print(ckp)
             model_path = path_to_flowback + "/models/Pro_pretrained"
-            self.flowback = load_model(model_path, ckp, device)
+            if adjoint:
+                ckp = 7000
+                self.flowback = load_model_adj(model_path, ckp, device)
+                print("loaded adjoint model")
+                #quit()
+            else:
+                self.flowback = load_model(model_path, ckp, device)
             self.flowback_device = device
         else:
             if device is not None:
@@ -691,6 +699,108 @@ class MSToolProtein(object):
         if fix_c_term:
             flowtein.add_C_terminal_O()
         return flowtein
+
+    def flowback_adjoint_protein(self, output_name=None, flowback=None, device=None, fix_c_term=True):
+
+        import msback.adjoint_egnn_utils as adj
+
+        model = flowback
+        if model is None or device is None:
+            if self.flowback is None:
+                self.load_flowback(device=device, adjoint=True)
+
+            model = self.flowback
+            device = self.flowback_device
+
+        flow_name = self.name + ".pdb"
+        flowtein = cp.deepcopy(self)
+        flowtein.prep_flowback()
+        if not os.path.exists(flow_name):
+            flowtein.write(flow_name)
+
+        CG_noise = .003
+        n_gens = 1
+        solver = 'euler_ff'
+
+        mask_prior = True
+        tol = 3e-5
+        nsteps = 100
+        n_frames = 1
+        t_flip = 0.25
+        type_flip = 'ref-ter'
+        system = 'pro'
+        vram = 32
+
+        rtp_data, lj_data, bond_data = get_ff_data()
+
+        print("self.name is " + self.name )
+        self.write("temp0405_" + self.name + ".pdb")
+        trj = md.load("temp0405_" + self.name + ".pdb")
+        os.remove("temp0405_" + self.name + ".pdb")
+        # load features for the given topology and system type
+
+        res_ohe, atom_ohe, xyz, aa_to_cg, mask, n_atoms, top = adj.load_features_pro(trj)
+
+        n_test = 1
+        xyz_gen = []
+
+        np.random.seed(42)
+        prior = np.random.randn(n_gens, xyz.shape[1], xyz.shape[2]) * CG_noise
+
+        map_test =      [aa_to_cg]*n_test
+        mask_test =     [mask]*n_test
+        res_test =      [res_ohe]*n_test
+        atom_test =     [atom_ohe]*n_test
+        xyz_test_real= [xyz[0]] * n_test
+
+        ca_pos_test =   get_ca_pos(xyz_test_real, map_test)
+
+
+        # wrap model -- update this so that the function multiplies by the dim of n_gens * n_frames
+        #print(prior, prior.shape)
+
+        #print("res_tets")
+        #print(res_test, res_test[0].shape)
+        #print(map_test, map_test[0].shape)
+        #print(mask_test, mask_test[0].shape)
+        #print(atom_test, atom_test[0].shape)
+        #print(ca_pos_test, ca_pos_test[0].shape)
+        #print("rtp_data")
+        #print(rtp_data)
+        #print("lj_data")
+        #print(lj_data)
+        #print("bond_data")
+        #print(bond_data)
+        #print("top")
+        #print(top)
+        model_wrpd = adj.ModelWrapper(model=model,
+                            feats=torch.tensor(np.array(res_test)).int().to(device),
+                            mask=torch.tensor(np.array(mask_test)).bool().to(device),
+                            atom_feats=torch.tensor(np.array(atom_test)).to(device),
+                            ca_pos=torch.tensor(np.array(ca_pos_test)).to(device))
+
+
+        with torch.no_grad():
+            ode_traj = euler_ff_integrator(model_wrpd, torch.tensor(prior,
+                                                                    dtype=torch.float32).to(device), torch.tensor(ca_pos_test).to(device), rtp_data, lj_data, bond_data, top, device, t_flip=t_flip) #, t_flip=t_flip, type_flip=type_flip
+
+        # save trj -- optionally save ODE integration not just last structure -- only for one gen
+        #print(ode_traj[0])
+        #print(ode_traj[50])
+        #print(ode_traj[-1])
+        #quit()
+        xyz_gen.append(ode_traj[-1] + ca_pos_test)
+        xyz_gen = np.concatenate(xyz_gen)
+
+        flowtein.u.atoms[['x', 'y', 'z']] = np.multiply(xyz_gen[0], 10)
+
+        if output_name is not None:
+            flowtein.write(output_name)
+
+        if fix_c_term:
+            flowtein.add_C_terminal_O()
+        return flowtein
+
 
     def get_ss(self):
 
@@ -1136,18 +1246,63 @@ class MSToolProteinComplex(object):
         #print(later - now)
         return lizt[0]
 
-    def prep_rnem(self):
+    def prep_rnem(self, freeze_backbone=False, keep_heavy=False):
 
+        backbone = ["CA", "N", "O", "C"]
+
+        initial = cp.deepcopy(self)
 
         for pro in self.proteins:
-            pro.u.atoms = pro.u.atoms[pro.u.atoms.name == "CA"]
+            if not freeze_backbone and not keep_heavy:
+                pro.u.atoms = pro.u.atoms[pro.u.atoms.name == "CA"]
+            if keep_heavy:
+                pro.u.atoms = pro.u.atoms[pro.u.atoms['name'].apply(lambda x: "H" not in str(x) and str(x) != "OT2")]
+            elif freeze_backbone:
+                pro.u.atoms = pro.u.atoms[pro.u.atoms['name'].apply(lambda x: str(x) in backbone)]
 
+        print(pro.u.atoms.head())
         self.write("ref_pos.dms", ligands=True)
         self.write("temp.dms", ligands=False)
-        mstool.Ungroup("temp.dms", "temp_ungrouped.dms", mapping=os.path.dirname(os.path.abspath(__file__)) + "/Data/mapping_siyoung.dat", backbone=False)
-        mstool.capTerminiResidues("temp_ungrouped.dms", "temp_ungrouped_capped.pdb" )
+        self.write("ref_pos.pdb", ligands=True)
+        if freeze_backbone and keep_heavy:
+            os.remove("temp.dms")
+            initial.write("temp2.dms", ligands=True)
+            mstp = MSToolProtein("temp2.dms")
+            mstp.reindex_chains_with_list(mstp.count_chain_lengths())
+            mstp.write("complex_ungrouped_capped.dms")
+            mstp.write("complex_ungrouped_capped.pdb")
+            os.remove("temp2.dms")
+            return
 
+        mstool.Ungroup("temp.dms", out="temp_ungrouped.dms", mapping=os.path.dirname(os.path.abspath(__file__)) + "/Data/mapping_siyoung.dat",
+                       backbone=False, sort=False)
+
+        #mstool.Ungroup("temp.dms", out="temp_ungrouped.dms",
+        #               mapping=os.path.dirname(os.path.abspath(__file__)) + "/Data/mapping_siyoung_noback.dat",
+        #               backbone=False)
+
+        mstool.capTerminiResidues("temp_ungrouped.dms", "temp_ungrouped_capped.pdb" )
         mstp = MSToolProtein("temp_ungrouped_capped.pdb")
+
+        if freeze_backbone or keep_heavy:
+            ref_back = MSToolProtein("temp.dms")
+            if freeze_backbone:
+                for bb in backbone:
+                    vals = ref_back.u.atoms[ref_back.u.atoms['name']==bb][['x', 'y', 'z']].values
+                    print(vals)
+                    mstp.u.atoms.loc[mstp.u.atoms['name']==bb, ['x','y','z']] = vals
+            if keep_heavy:
+                names = np.unique(ref_back.u.atoms['name'].values)
+                names = list(names)
+                names = [n[:2] for n in names if 'H' not in n and n!="OT2"]
+                print(names)
+                for name in names:
+                    vals = ref_back.u.atoms[ref_back.u.atoms['name'].apply(lambda x: (str(x)+" ")[:2]==(name + "  ")[:2])][['x', 'y', 'z']].values
+                    print(name)
+                    mstp.u.atoms.loc[mstp.u.atoms['name'].apply(lambda x: (str(x)+" ")[:2]==(name + "  ")[:2]), ['x', 'y', 'z']] = vals
+
+
+
         lizt = [mstp]
         lizt.extend(self.ligs)
         combo = MSToolProteinComplex(lizt)
@@ -1155,14 +1310,15 @@ class MSToolProteinComplex(object):
         mstp = MSToolProtein("temp2.dms")
         mstp.reindex_chains_with_list(mstp.count_chain_lengths())
         mstp.write("complex_ungrouped_capped.dms")
+        mstp.write("complex_ungrouped_capped.pdb")
         os.remove("temp.dms")
         os.remove("temp2.dms")
         os.remove("temp_ungrouped.dms")
         os.remove("temp_ungrouped_capped.pdb")
 
-    def run_rnem(self,energy=1e4, ff_add=None):
+    def run_rnem(self,energy=1e4, ff_add=None, freeze_backbone=False, keep_heavy=False):
 
-        self.prep_rnem()
+        self.prep_rnem(freeze_backbone=freeze_backbone, keep_heavy=keep_heavy)
         #now = time.time()
         here = os.path.dirname(os.path.abspath(__file__))
         if ff_add is None:

@@ -1,0 +1,9 @@
+run anset_mstool.py to generate sidechains with flowback adjoint
+
+rnem.py will run RNEM with all heavy atoms highly restrained
+
+rnem2.py will run RNEM with the backbone restrained
+
+result should be nice backbone secondary structure
+
+qs.py runs md energy minimization  -- in this case there is no IP6 but can see easy way to do energy minimization
